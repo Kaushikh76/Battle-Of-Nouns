@@ -6,19 +6,19 @@ const characters = ['Defender', 'bomber', 'Warrier'];
 
 const characterImages = {
   Marines: [
-    'src/assets/marines-defender.png',
+    'src/assets/marine_defender_frame2x.png',
     'src/assets/marines-bomber.png',
-    'src/assets/marines-warrier.png',
+    'src/assets/marine_warrier_frame2x.png',
   ],
   Ninjas: [
     'src/assets/ninjas-defender.png',
-    'src/assets/ninjas-bomber.png',
-    'src/assets/ninjas-warrier.png',
+    'src/assets/ninja_bomber_frame2x.png',
+    'src/assets/ninja_warrier_frame_copy2x.png',
   ],
   Rangers: [
-    'src/assets/rangers-defender.png',
-    'src/assets/rangers-bomber.png',
-    'src/assets/rangers-warrier.png',
+    'src/assets/ranger_defender_frame_copy_42x.png',
+    'src/assets/ranger_bomber_frame2x.png',
+    'src/assets/  ranger_warrier_frame_copy_22x.png',
   ],
 };
 
