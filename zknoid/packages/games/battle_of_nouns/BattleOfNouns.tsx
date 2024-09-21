@@ -103,8 +103,7 @@ export default function BattleOfNouns({
   const query = networkStore.protokitClientStarted
     ? client_.query.runtime.BattleOfNounsLogic
     : undefined;
-
-  useObserveLobbiesStore(query);
+  useObserveLobbiesStore(query, 3);
   const lobbiesStore = useLobbiesStore();
 
   console.log("Active lobby", lobbiesStore.activeLobby);

@@ -35,7 +35,8 @@ export interface LobbiesState {
   loadLobbies(
     query: ModuleQuery<LobbyManager>,
     address: PublicKey,
-    rewardCoeff: number
+    rewardCoeff: number,
+    maxPlayers: number
   ): Promise<void>;
   loadmatchmakingOptions(query: ModuleQuery<MatchMaker>): Promise<void>;
 }
@@ -92,7 +93,8 @@ export const lobbyInitializer = immer<LobbiesState>((set) => ({
   async loadLobbies(
     query: ModuleQuery<MatchMaker>,
     address: PublicKey,
-    rewardCoeff: number
+    rewardCoeff: number,
+    maxPlayers: number
   ) {
     set((state) => {
       state.loading = true;
@@ -132,7 +134,7 @@ export const lobbyInitializer = immer<LobbiesState>((set) => ({
               curLobby.participationFee.toBigInt()) /
             1000n,
           fee: curLobby.participationFee.toBigInt(),
-          maxPlayers: 2,
+          maxPlayers,
           players,
           playersAddresses: curLobby.players.slice(0, players),
           playersReady: curLobby.ready
@@ -165,7 +167,7 @@ export const lobbyInitializer = immer<LobbiesState>((set) => ({
               curLobby.participationFee.toBigInt()) /
             1000n,
           fee: curLobby.participationFee.toBigInt(),
-          maxPlayers: 2,
+          maxPlayers,
           players,
           playersAddresses: curLobby.players.slice(0, players),
           playersReady: curLobby.ready
@@ -261,7 +263,8 @@ export const useObserveLobbiesStore = (
       lobbiesStore.loadLobbies(
         query!,
         PublicKey.fromBase58(network.address),
-        rewardCoeff
+        rewardCoeff,
+        3
       );
       console.log("bcl", chain.block?.height);
       if (chain.block?.height) {
