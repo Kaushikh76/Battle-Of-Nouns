@@ -6,6 +6,7 @@ export * from './games/randzu/index.js';
 export * from './games/checkers/index.js';
 export * from './games/arkanoid/index.js';
 export * from './games/thimblerig/index.js';
+export * from './games/battle_of_nouns/index.js';
 
 export * from './engine/index.js';
 export * from './framework/index.js';
