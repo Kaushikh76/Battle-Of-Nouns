@@ -9,7 +9,8 @@ import { State, StateMap, assert } from '@proto-kit/protocol';
 import { PublicKey, Struct, UInt64, Provable, Bool } from 'o1js';
 import { Lobby, LobbyManager } from './LobbyManager';
 
-const PLAYERS_COUNT = 3;
+interface MatchMakerConfig {}
+
 export const PENDING_BLOCKS_NUM_CONST = 20;
 
 const BLOCK_PRODUCTION_SECONDS = 5;
@@ -77,9 +78,7 @@ export class MatchMaker extends LobbyManager {
   public async addDefaultLobby(participationFee: ProtoUInt64): Promise<void> {
     let lobby = Lobby.default(UInt64.zero, Bool(false));
     lobby.participationFee = participationFee;
-    const lastLobbyId = (await this.lastDefaultLobby.get()).orElse(
-      UInt64.from(1),
-    );
+    const lastLobbyId = (await this.lastDefaultLobby.get()).orElse(UInt64.from(1));
     await this.defaultLobbies.set(lastLobbyId, lobby);
     await this.lastDefaultLobby.set(lastLobbyId.add(1));
   }
@@ -102,9 +101,7 @@ export class MatchMaker extends LobbyManager {
     // If player in game – revert
 
     Provable.asProver(async () => {
-      const gameId = (await this.activeGameId.get(sender)).orElse(
-        UInt64.from(0),
-      );
+      const gameId = (await this.activeGameId.get(sender)).orElse(UInt64.from(0));
       if (gameId.equals(UInt64.from(0)).not().toBoolean()) {
         console.log(
           `Register failed. Player already in game ${gameId.toString()}`,
@@ -113,7 +110,8 @@ export class MatchMaker extends LobbyManager {
     });
 
     assert(
-      (await this.activeGameId.get(sender))
+      (await this.activeGameId
+        .get(sender))
         .orElse(UInt64.from(0))
         .equals(UInt64.from(0)),
       'Player already in game',
@@ -151,14 +149,12 @@ export class MatchMaker extends LobbyManager {
     const lobby = lobbyOption.value;
 
     assert(
-      (
-        await this.queueRegisteredRoundUsers.get(
-          new RoundIdxUser({
-            roundId: lobby.id,
-            userAddress: sender,
-          }),
-        )
-      ).value,
+      (await this.queueRegisteredRoundUsers.get(
+        new RoundIdxUser({
+          roundId: lobby.id,
+          userAddress: sender,
+        }),
+      )).value,
       'User is not registered for this matchmaking',
     );
 
@@ -173,17 +169,15 @@ export class MatchMaker extends LobbyManager {
     await this.pendingLobby.set(pendingLobbyIndex, lobby);
   }
 
-  private async joinPendingLobby(
-    lobbyIndex: PendingLobbyIndex,
-  ): Promise<Lobby> {
+  private async joinPendingLobby(lobbyIndex: PendingLobbyIndex): Promise<Lobby> {
     const sender = this.transaction.sender.value;
-    const lobby = (await this.pendingLobby.get(lobbyIndex)).orElse(
-      await this.getDefaultLobby(lobbyIndex.type, lobbyIndex.roundId),
-    );
+    const lobby = (await this.pendingLobby
+      .get(lobbyIndex))
+      .orElse(await this.getDefaultLobby(lobbyIndex.type, lobbyIndex.roundId));
 
     assert(
-      (
-        await this.queueRegisteredRoundUsers.get(
+      (await this.queueRegisteredRoundUsers
+        .get(
           new RoundIdxUser({
             roundId: lobby.id,
             userAddress: sender,
@@ -255,20 +249,21 @@ export class MatchMaker extends LobbyManager {
     );
   }
 
-  protected async proveOpponentTimeout(
-    gameId: UInt64,
-    passTurn: boolean,
-  ): Promise<void> {
-    const sessionSender = await this.sessions.get(
-      this.transaction.sender.value,
-    );
+  protected async proveOpponentTimeout(gameId: UInt64, passTurn: boolean): Promise<void> {
+    const sessionSender = await this.sessions.get(this.transaction.sender.value);
     const sender = Provable.if(
       sessionSender.isSome,
       sessionSender.value,
       this.transaction.sender.value,
     );
     const game = await this.games.get(gameId);
+    const nextUser = Provable.if(
+      game.value.currentMoveUser.equals(game.value.player1),
+      game.value.player2,
+      game.value.player1,
+    );
     assert(game.isSome, 'Invalid game id');
+    assert(nextUser.equals(sender), `Not your move`);
     assert(game.value.winner.equals(PublicKey.empty()), `Game finished`);
 
     const isTimeout = this.network.block.height
@@ -278,83 +273,57 @@ export class MatchMaker extends LobbyManager {
     assert(isTimeout, 'Timeout not reached');
 
     if (passTurn) {
-      game.value.currentMoveUser = this.getNextPlayer(game.value);
+      game.value.currentMoveUser = Provable.if(
+        game.value.currentMoveUser.equals(game.value.player1),
+        game.value.player2,
+        game.value.player1,
+      );
       game.value.lastMoveBlockHeight = this.network.block.height;
     } else {
       game.value.winner = sender;
       game.value.lastMoveBlockHeight = this.network.block.height;
-      // Removing active game for all players if game ended
-      for (let player of game.value.players) {
-        await this.activeGameId.set(player, UInt64.from(0));
-      }
+      // Removing active game for players if game ended
+      await this.activeGameId.set(game.value.player1, UInt64.from(0));
+      await this.activeGameId.set(game.value.player2, UInt64.from(0));
     }
 
     await this.games.set(gameId, game.value);
-  }
-
-  private getNextPlayer(game: any): PublicKey {
-    const currentIndex = game.players.findIndex((p: any) =>
-      p.equals(game.currentMoveUser),
-    );
-    const nextIndex = (currentIndex + 1) % PLAYERS_COUNT;
-    return game.players[nextIndex];
   }
 
   protected async acquireFunds(
     gameId: UInt64,
     player1: PublicKey,
     player2: PublicKey,
-    player3: PublicKey,
     player1Share: ProtoUInt64,
     player2Share: ProtoUInt64,
-    player3Share: ProtoUInt64,
     totalShares: ProtoUInt64,
   ) {
     const player1PendingBalance = await this.pendingBalances.get(player1);
     const player2PendingBalance = await this.pendingBalances.get(player2);
-    const player3PendingBalance = await this.pendingBalances.get(player3);
-
-    const gameFund = ProtoUInt64.from((await this.gameFund.get(gameId)).value);
-
-    // Check if totalShares is zero
-    const isZeroShares = totalShares.equals(ProtoUInt64.from(0));
-
-    // If totalShares is zero, distribute equally
-    const equalShare = gameFund.div(ProtoUInt64.from(3));
-
+    // Provable.log(player1, player2, player1Share, player2Share, totalShares);
+    // Provable.log(
+    //   ProtoUInt64.from(this.gameFund.get(gameId).value)
+    //     .mul(player1Share)
+    //     .div(totalShares),
+    //   ProtoUInt64.from(this.gameFund.get(gameId).value)
+    //     .mul(player2Share)
+    //     .div(totalShares),
+    // );
     await this.pendingBalances.set(
       player1,
       ProtoUInt64.from(player1PendingBalance.value).add(
-        Provable.if<ProtoUInt64>(
-          isZeroShares,
-          ProtoUInt64,
-          equalShare,
-          gameFund.mul(player1Share).div(totalShares),
-        ),
+        ProtoUInt64.from((await this.gameFund.get(gameId)).value)
+          .mul(player1Share)
+          .div(totalShares),
       ),
     );
 
     await this.pendingBalances.set(
       player2,
       ProtoUInt64.from(player2PendingBalance.value).add(
-        Provable.if<ProtoUInt64>(
-          isZeroShares,
-          ProtoUInt64,
-          equalShare,
-          gameFund.mul(player2Share).div(totalShares),
-        ),
-      ),
-    );
-
-    await this.pendingBalances.set(
-      player3,
-      ProtoUInt64.from(player3PendingBalance.value).add(
-        Provable.if<ProtoUInt64>(
-          isZeroShares,
-          ProtoUInt64,
-          equalShare,
-          gameFund.mul(player3Share).div(totalShares),
-        ),
+        ProtoUInt64.from((await this.gameFund.get(gameId)).value)
+          .mul(player2Share)
+          .div(totalShares),
       ),
     );
   }

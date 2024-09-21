@@ -14,7 +14,7 @@ import {
   GameRecordKey,
   LeaderboardIndex,
   LeaderboardScore,
-} from '../arkanoid/types';
+} from '../games/arkanoid/types';
 import { ZNAKE_TOKEN_ID } from '../constants';
 
 export interface IScoreable {
@@ -65,9 +65,7 @@ export class Gamehub<
 
   public leaderboardSize = 10;
 
-  // public constructor(@inject('Balances') private balances: Balances) {
-  // TODO: I changed
-  public constructor(private balances: Balances) {
+  public constructor(@inject('Balances') private balances: Balances) {
     super();
   }
 

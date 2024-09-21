@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useState } from "react";
 import { GameView } from "./components/GameView";
-import { Int64, PublicKey, UInt32, UInt64 } from "o1js";
+import { Int64, PrivateKey, PublicKey, UInt32, UInt64 } from "o1js";
 import { useNetworkStore } from "@zknoid/sdk/lib/stores/network";
 import {
   useObserveRandzuMatchQueue,
@@ -86,7 +86,7 @@ export default function Randzu({
   const protokitChain = useProtokitChainStore();
   useObserveRandzuMatchQueue();
   const sessionPrivateKey = useStore(useSessionKeyStore, (state) =>
-    state.getSessionKey(),
+    state.getSessionKey()
   );
   // const progress = api.progress.setSolvedQuests.useMutation();
   const startGame = useStartGame(competition.id, setGameState);
@@ -123,7 +123,7 @@ export default function Randzu({
       sessionPrivateKey.toPublicKey(),
       async () => {
         randzuLogic.collectPendingBalance();
-      },
+      }
     );
 
     console.log("Collect tx", tx);
@@ -145,9 +145,9 @@ export default function Randzu({
       PublicKey.fromBase58(networkStore.address!),
       async () => {
         randzuLogic.proveOpponentTimeout(
-          UInt64.from(matchQueue.gameInfo!.gameId),
+          UInt64.from(matchQueue.gameInfo!.gameId)
         );
-      },
+      }
     );
 
     await tx.sign();
@@ -163,7 +163,7 @@ export default function Randzu({
     const currentUserId = matchQueue.gameInfo.currentUserIndex + 1;
 
     const updatedField = (matchQueue.gameInfo.field as RandzuField).value.map(
-      (x: UInt32[]) => x.map((x) => x.toBigint()),
+      (x: UInt32[]) => x.map((x) => x.toBigint())
     );
 
     updatedField[y][x] = matchQueue.gameInfo.currentUserIndex + 1;
@@ -189,10 +189,10 @@ export default function Randzu({
                 y: UInt32.from(0),
                 directionX: Int64.from(0),
                 directionY: Int64.from(0),
-              },
-            ),
+              }
+            )
         );
-      },
+      }
     );
 
     setLoading(true);
@@ -299,7 +299,7 @@ export default function Randzu({
       toast.success(
         toasterStore,
         `You are won! Winnings: ${formatUnits(matchQueue.pendingBalance)} ${Currency.ZNAKES}`,
-        true,
+        true
       );
   }, [gameState]);
 
@@ -414,7 +414,7 @@ export default function Randzu({
                   {gameState == GameState.Won &&
                     (isRateGame &&
                     !rateGameStore.ratedGames.find(
-                      (game) => game.gameId == randzuConfig.id,
+                      (game) => game.gameId == randzuConfig.id
                     ) ? (
                       <GameWrap>
                         <RateGame
@@ -440,7 +440,7 @@ export default function Randzu({
                     <GameWrap>
                       <Button
                         label={`START FOR ${formatUnits(
-                          competition.enteringPrice,
+                          competition.enteringPrice
                         )}`}
                         onClick={startGame}
                         className={"max-w-[40%]"}
