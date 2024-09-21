@@ -1,5 +1,5 @@
 const BOARD_SIZE = 15;
-const PLAYERS_COUNT = 3;
+const PLAYERS_COUNT = 2;
 const SUMMON_COST = 3;
 const BUILD_COST = 3;
 const INITIAL_NOUNS = 2;

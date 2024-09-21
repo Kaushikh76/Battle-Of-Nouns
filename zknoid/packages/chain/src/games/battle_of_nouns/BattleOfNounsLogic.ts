@@ -232,123 +232,122 @@ export class BattleOfNounsLogic extends MatchMakerV2 {
     return await super.initGame(lobby, shouldUpdate);
   }
 
-  private createInitialField(
-    players: PublicKey[],
-    randomGenerator: RandomGenerator,
-  ): GameField {
-    const INITIAL_POSITIONS = [
-      new Position({ x: UInt32.from(0), y: UInt32.from(0) }),
-      new Position({ x: UInt32.from(0), y: UInt32.from(BOARD_SIZE - 1) }),
-      new Position({
-        x: UInt32.from(BOARD_SIZE - 1),
-        y: UInt32.from(BOARD_SIZE - 1),
-      }),
-    ];
+  // private createInitialField(
+  //   players: PublicKey[],
+  //   randomGenerator: RandomGenerator,
+  // ): GameField {
+  //   const INITIAL_POSITIONS = [
+  //     new Position({ x: UInt32.from(0), y: UInt32.from(0) }),
+  //     new Position({
+  //       x: UInt32.from(BOARD_SIZE - 1),
+  //       y: UInt32.from(BOARD_SIZE - 1),
+  //     }),
+  //   ];
 
-    const tilesToPlace = [
-      { type: TileType.EmptyHouse, count: EMPTY_HOUSES },
-      { type: TileType.Flower, count: FLOWERS },
-      { type: TileType.Tree, count: TREES },
-    ];
+  //   const tilesToPlace = [
+  //     { type: TileType.EmptyHouse, count: EMPTY_HOUSES },
+  //     { type: TileType.Flower, count: FLOWERS },
+  //     { type: TileType.Tree, count: TREES },
+  //   ];
 
-    let remainingTiles = UInt32.from(EMPTY_HOUSES + FLOWERS + TREES);
-    const characters = INITIAL_POSITIONS.map((pos, index) => {
-      const characterType = Number(randomGenerator.getNumber(3).magnitude) + 1;
-      const blockHeight = UInt64.from(0);
-      blockHeight.value = this.network.block.height.value;
+  //   let remainingTiles = UInt32.from(EMPTY_HOUSES + FLOWERS + TREES);
+  //   const characters = INITIAL_POSITIONS.map((pos, index) => {
+  //     const characterType = Number(randomGenerator.getNumber(3).magnitude) + 1;
+  //     const blockHeight = UInt64.from(0);
+  //     blockHeight.value = this.network.block.height.value;
 
-      return Character.create(
-        UInt32.from(Number(characterType)),
-        pos,
-        players[index],
-        blockHeight,
-      );
-    });
-    const field = Array(BOARD_SIZE).map((_, i) =>
-      Array(BOARD_SIZE).map((_, j) => {
-        const position = new Position({ x: UInt32.from(i), y: UInt32.from(j) });
+  //     return Character.create(
+  //       UInt32.from(Number(characterType)),
+  //       pos,
+  //       players[index],
+  //       blockHeight,
+  //     );
+  //   });
+  //   const field = Array(BOARD_SIZE).map((_, i) =>
+  //     Array(BOARD_SIZE).map((_, j) => {
+  //       const position = new Position({ x: UInt32.from(i), y: UInt32.from(j) });
 
-        // Check if it's an initial position
-        const isInitialPosition = INITIAL_POSITIONS.reduce(
-          (acc, pos, index) =>
-            acc.or(pos.x.equals(position.x).and(pos.y.equals(position.y))),
-          Bool(false),
-        );
+  //       // Check if it's an initial position
+  //       const isInitialPosition = INITIAL_POSITIONS.reduce(
+  //         (acc, pos, index) =>
+  //           acc.or(pos.x.equals(position.x).and(pos.y.equals(position.y))),
+  //         Bool(false),
+  //       );
 
-        const initialPositionIndex = INITIAL_POSITIONS.reduce(
-          (acc, pos, index) =>
-            Provable.if(
-              pos.x.equals(position.x).and(pos.y.equals(position.y)),
-              UInt32.from(index),
-              acc,
-            ),
-          UInt32.from(PLAYERS_COUNT),
-        );
+  //       const initialPositionIndex = INITIAL_POSITIONS.reduce(
+  //         (acc, pos, index) =>
+  //           Provable.if(
+  //             pos.x.equals(position.x).and(pos.y.equals(position.y)),
+  //             UInt32.from(index),
+  //             acc,
+  //           ),
+  //         UInt32.from(PLAYERS_COUNT),
+  //       );
 
-        // Place captured houses for players
-        const capturedHouse = new Tile({
-          type: UInt32.from(TileType.CapturedHouse),
-          owner: Provable.switch(
-            players.map((_, idx) =>
-              initialPositionIndex.equals(UInt32.from(idx)),
-            ),
-            PublicKey,
-            players,
-          ),
-        });
+  //       // Place captured houses for players
+  //       const capturedHouse = new Tile({
+  //         type: UInt32.from(TileType.CapturedHouse),
+  //         owner: Provable.switch(
+  //           players.map((_, idx) =>
+  //             initialPositionIndex.equals(UInt32.from(idx)),
+  //           ),
+  //           PublicKey,
+  //           players,
+  //         ),
+  //       });
 
-        // Randomly place other tiles or leave as grass
-        const randomValue = Number(
-          randomGenerator.getNumber(BOARD_SIZE * BOARD_SIZE).magnitude,
-        );
-        const shouldPlaceSpecialTile = UInt32.from(randomValue)
-          .lessThan(remainingTiles)
-          .and(isInitialPosition.not());
+  //       // Randomly place other tiles or leave as grass
+  //       const randomValue = Number(
+  //         randomGenerator.getNumber(BOARD_SIZE * BOARD_SIZE).magnitude,
+  //       );
+  //       const shouldPlaceSpecialTile = UInt32.from(randomValue)
+  //         .lessThan(remainingTiles)
+  //         .and(isInitialPosition.not());
 
-        const specialTileType = Provable.switch(
-          tilesToPlace.map((tile, index) =>
-            UInt32.from(randomValue)
-              .mod(UInt32.from(tilesToPlace.length))
-              .equals(UInt32.from(index))
-              .and(UInt32.from(tile.count).greaterThan(UInt32.from(0))),
-          ),
-          UInt32,
-          tilesToPlace.map((tile) => UInt32.from(tile.type)),
-        );
+  //       const specialTileType = Provable.switch(
+  //         tilesToPlace.map((tile, index) =>
+  //           UInt32.from(randomValue)
+  //             .mod(UInt32.from(tilesToPlace.length))
+  //             .equals(UInt32.from(index))
+  //             .and(UInt32.from(tile.count).greaterThan(UInt32.from(0))),
+  //         ),
+  //         UInt32,
+  //         tilesToPlace.map((tile) => UInt32.from(tile.type)),
+  //       );
 
-        const specialTile = new Tile({
-          type: specialTileType,
-          owner: PublicKey.empty(),
-        });
+  //       const specialTile = new Tile({
+  //         type: specialTileType,
+  //         owner: PublicKey.empty(),
+  //       });
 
-        remainingTiles = Provable.if(
-          shouldPlaceSpecialTile,
-          remainingTiles.sub(1),
-          remainingTiles,
-        );
+  //       remainingTiles = Provable.if(
+  //         shouldPlaceSpecialTile,
+  //         remainingTiles.sub(1),
+  //         remainingTiles,
+  //       );
 
-        return Provable.if<Tile>(
-          isInitialPosition,
-          Tile,
-          capturedHouse,
-          Provable.if<Tile>(
-            shouldPlaceSpecialTile,
-            Tile,
-            specialTile,
-            new Tile({
-              type: UInt32.from(TileType.Grass),
-              owner: PublicKey.empty(),
-            }),
-          ),
-        );
-      }),
-    );
+  //       return Provable.if<Tile>(
+  //         isInitialPosition,
+  //         Tile,
+  //         capturedHouse,
+  //         Provable.if<Tile>(
+  //           shouldPlaceSpecialTile,
+  //           Tile,
+  //           specialTile,
+  //           new Tile({
+  //             type: UInt32.from(TileType.Grass),
+  //             owner: PublicKey.empty(),
+  //           }),
+  //         ),
+  //       );
+  //     }),
+  //   );
 
-    return new GameField({
-      tiles: field,
-      characters: characters,
-    });
-  }
+  //   return new GameField({
+  //     tiles: field,
+  //     characters: characters,
+  //   });
+  // }
 
   // private placeRandomTiles(
   //   field: Tile[][],
@@ -796,12 +795,10 @@ export class BattleOfNounsLogic extends MatchMakerV2 {
   }
 
   private nextTurn(game: GameInfo): GameInfo {
-    // Loop over the next PLAYERS_COUNT players to find the next live player
     const nextPlayerAliveStatus = game.players.map((player, index) =>
       player.houseCount.greaterThan(UInt32.from(0)),
     );
 
-    // Find the next player's index who is alive
     const nextPlayerIndex = Provable.switch(
       nextPlayerAliveStatus,
       UInt32,
@@ -809,7 +806,6 @@ export class BattleOfNounsLogic extends MatchMakerV2 {
       { allowNonExclusive: false },
     );
 
-    // Find the next player’s public key (for currentMoveUser)
     const changedCurrentMoveUser = Provable.switch(
       nextPlayerAliveStatus,
       PublicKey,
@@ -817,7 +813,6 @@ export class BattleOfNounsLogic extends MatchMakerV2 {
       { allowNonExclusive: false },
     );
 
-    // Update the players' nouns based on the next player’s index
     const updatedPlayers = game.players.map((player, index) =>
       Provable.if<PlayerInfo>(
         nextPlayerIndex.equals(UInt32.from(index)),
@@ -830,7 +825,6 @@ export class BattleOfNounsLogic extends MatchMakerV2 {
       ),
     );
 
-    // Return the updated game state
     return new GameInfo({
       ...game,
       players: updatedPlayers,
@@ -867,13 +861,11 @@ export class BattleOfNounsLogic extends MatchMakerV2 {
 
     const gameEnded = winner.equals(PublicKey.empty()).not();
 
-    // Update the game with the winner (if found)
     const updatedGame = new GameInfo({
       ...game,
       winner: winner,
     });
 
-    // Handle the async endGame logic outside of the Provable computation
     if (gameEnded) {
       await this.endGame(gameId, updatedGame); // Call async endGame if the game has ended
     }
@@ -891,15 +883,13 @@ export class BattleOfNounsLogic extends MatchMakerV2 {
       ),
     );
 
-    await this.acquireFundsModified(
+    await this.acquireFunds(
       gameId,
-      game.players[0].publicKey,
-      game.players[1].publicKey,
-      game.players[2].publicKey,
+      game.winner,
+      PublicKey.empty(),
       winnerShare,
-      winnerShare,
-      winnerShare,
-      UInt64.from(3),
+      UInt64.from(0),
+      UInt64.from(1),
     );
 
     // Clear game state
@@ -919,14 +909,7 @@ export class BattleOfNounsLogic extends MatchMakerV2 {
       ),
       UInt64.from(0),
     );
-    await this.activeGameId.set(
-      Provable.if(
-        game.winner.isEmpty().not(),
-        game.players[2].publicKey,
-        PublicKey.empty(),
-      ),
-      UInt64.from(0),
-    );
+
     await this._onLobbyEnd(gameId, game.winner.isEmpty().not());
   }
 
@@ -949,64 +932,5 @@ export class BattleOfNounsLogic extends MatchMakerV2 {
       .lessThanOrEqual(UInt32.from(1)) // x difference <= 1
       .and(yDiff.lessThanOrEqual(UInt32.from(1))) // y difference <= 1
       .and(xDiff.add(yDiff).greaterThan(UInt32.from(0))); // Total difference > 0
-  }
-
-  private async acquireFundsModified(
-    gameId: UInt64,
-    player1: PublicKey,
-    player2: PublicKey,
-    player3: PublicKey,
-    player1Share: UInt64,
-    player2Share: UInt64,
-    player3Share: UInt64,
-    totalShares: UInt64,
-  ) {
-    const player1PendingBalance = await this.pendingBalances.get(player1);
-    const player2PendingBalance = await this.pendingBalances.get(player2);
-    const player3PendingBalance = await this.pendingBalances.get(player3);
-
-    const gameFund = UInt64.from((await this.gameFund.get(gameId)).value);
-
-    // Check if totalShares is zero
-    const isZeroShares = totalShares.equals(UInt64.from(0));
-
-    // If totalShares is zero, distribute equally
-    const equalShare = gameFund.div(UInt64.from(3));
-
-    await this.pendingBalances.set(
-      player1,
-      UInt64.from(player1PendingBalance.value).add(
-        Provable.if<UInt64>(
-          isZeroShares,
-          UInt64,
-          equalShare,
-          gameFund.mul(player1Share).div(totalShares),
-        ),
-      ),
-    );
-
-    await this.pendingBalances.set(
-      player2,
-      UInt64.from(player2PendingBalance.value).add(
-        Provable.if<UInt64>(
-          isZeroShares,
-          UInt64,
-          equalShare,
-          gameFund.mul(player2Share).div(totalShares),
-        ),
-      ),
-    );
-
-    await this.pendingBalances.set(
-      player3,
-      UInt64.from(player3PendingBalance.value).add(
-        Provable.if<UInt64>(
-          isZeroShares,
-          UInt64,
-          equalShare,
-          gameFund.mul(player3Share).div(totalShares),
-        ),
-      ),
-    );
   }
 }
