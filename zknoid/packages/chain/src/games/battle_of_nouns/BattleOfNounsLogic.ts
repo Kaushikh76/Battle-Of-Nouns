@@ -1,18 +1,7 @@
 import { state, runtimeMethod, runtimeModule } from '@proto-kit/module';
 import { State, StateMap, assert } from '@proto-kit/protocol';
-import {
-  PublicKey,
-  Struct,
-  UInt64,
-  Provable,
-  Bool,
-  UInt32,
-  Field,
-  Int64,
-} from 'o1js';
-import { MatchMaker } from '../../engine/MatchMaker';
-import { UInt64 as ProtoUInt64 } from '@proto-kit/library';
-import { Lobby } from '../../engine/LobbyManager';
+import { PublicKey, Struct, Provable, Bool, UInt32, Field, Int64 } from 'o1js';
+import { UInt64 } from '@proto-kit/library';
 import { RandomGenerator } from '../../engine/Random';
 import {
   BOARD_SIZE,
@@ -28,14 +17,18 @@ import {
   TREES,
   WIN_CONDITION_NOUNS,
 } from './constants';
+import { getMatchMakingV2 } from 'src/engine';
+
+const {
+  LobbyV2Base,
+  LobbyManagerV2Base,
+  MathMakingV2Base: MatchMakerV2,
+} = getMatchMakingV2(PLAYERS_COUNT);
 
 class Position extends Struct({
   x: UInt32,
   y: UInt32,
 }) {
-  toFields(): Field[] {
-    return [...this.x.toFields(), ...this.y.toFields()];
-  }
   equals(x: UInt32, y: UInt32): Bool {
     return this.x.equals(x).and(this.y.equals(y));
   }
@@ -53,15 +46,6 @@ class Character extends Struct({
   lastAttackMoveBlockHeight: UInt64,
   lastMoveBlockHeight: UInt64,
 }) {
-  toFields(): Field[] {
-    return [
-      ...this.type.toFields(), // Convert type to fields
-      ...this.hp.toFields(), // Convert hp to fields
-      ...this.damage.toFields(), // Convert damage to fields
-      ...this.position.toFields(), // Assuming position is a provable type
-      ...this.owner.toFields(), // Convert owner (PublicKey) to fields
-    ];
-  }
   static create(
     type: UInt32,
     position: Position,
@@ -102,14 +86,7 @@ class Character extends Struct({
 class Tile extends Struct({
   type: UInt32,
   owner: PublicKey,
-}) {
-  toFields(): Field[] {
-    return [
-      ...this.type.toFields(), // Convert type to fields
-      ...this.owner.toFields(), // Convert owner (PublicKey) to fields
-    ];
-  }
-}
+}) {}
 
 class GameField extends Struct({
   tiles: Provable.Array(Provable.Array(Tile, BOARD_SIZE), BOARD_SIZE),
@@ -149,14 +126,6 @@ class PlayerInfo extends Struct({
   nounsPerTurn: UInt32,
   houseCount: UInt32,
 }) {
-  toFields(): Field[] {
-    return [
-      ...this.publicKey.toFields(),
-      ...this.nouns.toFields(),
-      ...this.nounsPerTurn.toFields(),
-      ...this.houseCount.toFields(),
-    ];
-  }
   spendBuildStructure(): PlayerInfo {
     assert(
       this.nouns.greaterThanOrEqual(UInt32.from(BUILD_COST)),
@@ -198,8 +167,10 @@ class GameInfo extends Struct({
   }
 }
 
+class Lobby extends LobbyV2Base {}
+
 @runtimeModule()
-export class BattleOfNounsLogic extends MatchMaker {
+export class BattleOfNounsLogic extends MatchMakerV2 {
   @state() public games = StateMap.from<UInt64, GameInfo>(UInt64, GameInfo);
   @state() public gamesNum = State.from<UInt64>(UInt64);
 
@@ -209,8 +180,11 @@ export class BattleOfNounsLogic extends MatchMaker {
   ): Promise<UInt64> {
     const currentGameId = lobby.id;
 
+    const blockHeight = UInt64.from(0);
+    blockHeight.value = this.network.block.height.value;
+
     await this.games.set(
-      Provable.if(shouldUpdate, currentGameId, UInt64.from(0)),
+      Provable.if<UInt64>(shouldUpdate, UInt64, currentGameId, UInt64.from(0)),
       new GameInfo({
         players: lobby.players.map(
           (player) =>
@@ -222,7 +196,7 @@ export class BattleOfNounsLogic extends MatchMaker {
             }),
         ),
         currentMoveUser: lobby.players[0],
-        lastMoveBlockHeight: this.network.block.height,
+        lastMoveBlockHeight: blockHeight,
         field: new GameField({
           tiles: Array(BOARD_SIZE).map(() =>
             Array(BOARD_SIZE).map(
@@ -252,7 +226,7 @@ export class BattleOfNounsLogic extends MatchMaker {
 
     await this.gameFund.set(
       currentGameId,
-      ProtoUInt64.from(lobby.participationFee).mul(PLAYERS_COUNT),
+      UInt64.from(lobby.participationFee).mul(PLAYERS_COUNT),
     );
 
     return await super.initGame(lobby, shouldUpdate);
@@ -280,11 +254,14 @@ export class BattleOfNounsLogic extends MatchMaker {
     let remainingTiles = UInt32.from(EMPTY_HOUSES + FLOWERS + TREES);
     const characters = INITIAL_POSITIONS.map((pos, index) => {
       const characterType = Number(randomGenerator.getNumber(3).magnitude) + 1;
+      const blockHeight = UInt64.from(0);
+      blockHeight.value = this.network.block.height.value;
+
       return Character.create(
         UInt32.from(Number(characterType)),
         pos,
         players[index],
-        this.network.block.height,
+        blockHeight,
       );
     });
     const field = Array(BOARD_SIZE).map((_, i) =>
@@ -350,11 +327,13 @@ export class BattleOfNounsLogic extends MatchMaker {
           remainingTiles,
         );
 
-        return Provable.if(
+        return Provable.if<Tile>(
           isInitialPosition,
+          Tile,
           capturedHouse,
-          Provable.if(
+          Provable.if<Tile>(
             shouldPlaceSpecialTile,
+            Tile,
             specialTile,
             new Tile({
               type: UInt32.from(TileType.Grass),
@@ -461,8 +440,9 @@ export class BattleOfNounsLogic extends MatchMaker {
     );
 
     const updatedCharacters = game.field.characters.map((char, index) =>
-      Provable.if(
+      Provable.if<Character>(
         UInt32.from(index).equals(characterIndex),
+        Character,
         new Character({ ...char, position: newPosition }),
         char,
       ),
@@ -839,8 +819,9 @@ export class BattleOfNounsLogic extends MatchMaker {
 
     // Update the players' nouns based on the next player’s index
     const updatedPlayers = game.players.map((player, index) =>
-      Provable.if(
+      Provable.if<PlayerInfo>(
         nextPlayerIndex.equals(UInt32.from(index)),
+        PlayerInfo,
         new PlayerInfo({
           ...player,
           nouns: player.nouns.add(player.nounsPerTurn),
@@ -901,23 +882,24 @@ export class BattleOfNounsLogic extends MatchMaker {
   }
 
   private async endGame(gameId: UInt64, game: GameInfo): Promise<void> {
-    const winnerShare = ProtoUInt64.from(
-      Provable.if<ProtoUInt64>(
+    const winnerShare = UInt64.from(
+      Provable.if<UInt64>(
         game.winner.isEmpty().not(),
-        ProtoUInt64,
-        ProtoUInt64.from(1),
-        ProtoUInt64.from(0),
+        UInt64,
+        UInt64.from(1),
+        UInt64.from(0),
       ),
     );
-    await this.acquireFunds(
+
+    await this.acquireFundsModified(
       gameId,
-      game.winner,
-      PublicKey.empty(),
-      PublicKey.empty(),
+      game.players[0].publicKey,
+      game.players[1].publicKey,
+      game.players[2].publicKey,
       winnerShare,
-      ProtoUInt64.from(1),
-      ProtoUInt64.from(0),
-      ProtoUInt64.from(1),
+      winnerShare,
+      winnerShare,
+      UInt64.from(3),
     );
 
     // Clear game state
@@ -967,5 +949,64 @@ export class BattleOfNounsLogic extends MatchMaker {
       .lessThanOrEqual(UInt32.from(1)) // x difference <= 1
       .and(yDiff.lessThanOrEqual(UInt32.from(1))) // y difference <= 1
       .and(xDiff.add(yDiff).greaterThan(UInt32.from(0))); // Total difference > 0
+  }
+
+  private async acquireFundsModified(
+    gameId: UInt64,
+    player1: PublicKey,
+    player2: PublicKey,
+    player3: PublicKey,
+    player1Share: UInt64,
+    player2Share: UInt64,
+    player3Share: UInt64,
+    totalShares: UInt64,
+  ) {
+    const player1PendingBalance = await this.pendingBalances.get(player1);
+    const player2PendingBalance = await this.pendingBalances.get(player2);
+    const player3PendingBalance = await this.pendingBalances.get(player3);
+
+    const gameFund = UInt64.from((await this.gameFund.get(gameId)).value);
+
+    // Check if totalShares is zero
+    const isZeroShares = totalShares.equals(UInt64.from(0));
+
+    // If totalShares is zero, distribute equally
+    const equalShare = gameFund.div(UInt64.from(3));
+
+    await this.pendingBalances.set(
+      player1,
+      UInt64.from(player1PendingBalance.value).add(
+        Provable.if<UInt64>(
+          isZeroShares,
+          UInt64,
+          equalShare,
+          gameFund.mul(player1Share).div(totalShares),
+        ),
+      ),
+    );
+
+    await this.pendingBalances.set(
+      player2,
+      UInt64.from(player2PendingBalance.value).add(
+        Provable.if<UInt64>(
+          isZeroShares,
+          UInt64,
+          equalShare,
+          gameFund.mul(player2Share).div(totalShares),
+        ),
+      ),
+    );
+
+    await this.pendingBalances.set(
+      player3,
+      UInt64.from(player3PendingBalance.value).add(
+        Provable.if<UInt64>(
+          isZeroShares,
+          UInt64,
+          equalShare,
+          gameFund.mul(player3Share).div(totalShares),
+        ),
+      ),
+    );
   }
 }
