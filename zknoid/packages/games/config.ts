@@ -7,10 +7,10 @@ import { tileVilleConfig } from "./tileville/config";
 import { pokerConfig } from "./poker/config";
 import { thimblerigConfig } from "./thimblerig/config";
 import { gameTemplateConfig } from "./game-template/config";
+import { battleOfNounsConifg } from "./battle_of_nouns/config";
 
 export const zkNoidConfig = createConfig({
   games: [
-    // gameTemplateConfig,
     tileVilleConfig,
     randzuConfig,
     checkersConfig,
@@ -18,5 +18,6 @@ export const zkNoidConfig = createConfig({
     pokerConfig,
     arkanoidConfig,
     numberGuessingConfig,
+    battleOfNounsConifg,
   ],
 });

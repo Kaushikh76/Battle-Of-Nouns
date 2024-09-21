@@ -6,6 +6,7 @@ import {
   ZkNoidGameFeature,
   ZkNoidGameGenre,
 } from "@zknoid/sdk/lib/platform/game_tags";
+import BattleOfNounsLobby from "./components/BattleOfNounsLobby";
 // import BattleOfNounsLobby from '@/games/battle_of_nouns/components/BattleOfNounsLobby';
 
 export const battleOfNounsConifg = createZkNoidGameConfig({
@@ -25,6 +26,6 @@ export const battleOfNounsConifg = createZkNoidGameConfig({
     BattleOfNounsLogic,
   },
   page: BattleOfNouns,
-  //   lobby: BattleOfNounsLobby,
+  lobby: BattleOfNounsLobby,
   // externalUrl: 'https://www.tileville.xyz/',
 });

@@ -1,19 +1,19 @@
-import { PublicKey } from 'o1js';
-import { useContext, useEffect } from 'react';
-import { useProtokitChainStore } from '../../../lib/stores/protokitChain';
-import { useNetworkStore } from '../../../lib/stores/network';
-import ZkNoidGameContext from '../../../lib/contexts/ZkNoidGameContext';
-import { battleOfNounsConifg } from '../config';
-import { type ClientAppChain } from '@proto-kit/sdk';
+import { PublicKey } from "o1js";
+import { useContext, useEffect } from "react";
+import { useProtokitChainStore } from "@zknoid/sdk/lib/stores/protokitChain";
+import { useNetworkStore } from "@zknoid/sdk/lib/stores/network";
+import ZkNoidGameContext from "@zknoid/sdk/lib/contexts/ZkNoidGameContext";
+import { battleOfNounsConifg } from "../config";
+import { type ClientAppChain } from "zknoid-chain-dev";
 import {
   MatchQueueState,
   matchQueueInitializer,
-} from '../../../lib/stores/matchQueue';
-import { create } from 'zustand';
+} from "@zknoid/sdk/lib/stores/matchQueue";
+import { create } from "zustand";
 
 export const useBattleOfNounsMatchQueueStore = create<
   MatchQueueState,
-  [['zustand/immer', never]]
+  [["zustand/immer", never]]
 >(matchQueueInitializer);
 
 export const useObserveBattleOfNounsMatchQueue = () => {
@@ -40,15 +40,15 @@ export const useObserveBattleOfNounsMatchQueue = () => {
     }
 
     if (!client) {
-      throw Error('Context app chain client is not set');
+      throw Error("Context app chain client is not set");
     }
 
     matchQueue.loadMatchQueue(
-      client_.query.runtime.BattleOfNounsLogic,
+      client_.query.runtime.BattleOfNounsLogic as any,
       chain.block?.height
     );
     matchQueue.loadActiveGame(
-      client_.query.runtime.BattleOfNounsLogic,
+      client_.query.runtime.BattleOfNounsLogic as any,
       chain.block?.height,
       PublicKey.fromBase58(network.address!)
     );

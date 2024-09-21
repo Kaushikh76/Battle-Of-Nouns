@@ -17,7 +17,7 @@ import {
   TREES,
   WIN_CONDITION_NOUNS,
 } from './constants';
-import { getMatchMakingV2 } from 'src/engine';
+import { getMatchMakingV2 } from '../../engine';
 
 const {
   LobbyV2Base,
