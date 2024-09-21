@@ -264,7 +264,7 @@ export const useObserveLobbiesStore = (
         query!,
         PublicKey.fromBase58(network.address),
         rewardCoeff,
-        3
+        2
       );
       console.log("bcl", chain.block?.height);
       if (chain.block?.height) {
