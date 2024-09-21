@@ -1,5 +1,4 @@
 import {
-  Bool,
   Field,
   Gadgets,
   Int64,
@@ -7,22 +6,12 @@ import {
   Provable,
   Sign,
   Struct,
+  UInt32,
+  UInt64,
   UInt8,
 } from 'o1js';
 
 const shift64divisor = `0b` + `1${'0'.repeat(64)}`;
-
-const bitsToInt64 = (bits: Bool[], maxValue: number): Int64 => {
-  if (bits.length > 64) {
-    throw Error(`Wrong bits length. Expected  <= 64, got ${bits.length}`);
-  }
-  let result = Int64.from(0);
-  result.magnitude.value = Field.fromBits(bits.slice(1, 64));
-  result = result.modV2(maxValue);
-  result.sgn.value = Field.fromBits(bits.slice(0, 1));
-
-  return result;
-};
 
 // TODO: Optimize
 // Now only 64 fits of 256 bits of field used. So can be 4x optimized
@@ -45,12 +34,18 @@ export class RandomGenerator extends Struct({
   getNumber(maxValue: number): Int64 {
     this.source = Poseidon.hash([this.source]);
     this.curValue = this.source;
+    let result: Int64 = Int64.from(0);
 
-    return bitsToInt64(this.curValue.toBits().slice(0, 64), maxValue);
+    let bytes = this.curValue.toBits();
+
+    result.magnitude.value = Field.fromBits(bytes.slice(0 * 32 + 1, 1 * 32));
+    result = result.modV2(maxValue);
+    result.sgn.value = Field.fromBits(bytes.slice(0, 1 * 32 + 1));
+
+    return result;
   }
 
-  // Get 4 number
-  getNumbers(maxValues: number[]): [Int64, Int64, Int64, Int64] {
+  getArknoidNumbers(range: number[]): [Int64, Int64, Int64, Int64] {
     this.source = Poseidon.hash([this.source]);
     this.curValue = this.source;
     const result: [Int64, Int64, Int64, Int64] = [
@@ -60,11 +55,32 @@ export class RandomGenerator extends Struct({
       Int64.from(0),
     ];
 
-    let bits = this.curValue.toBits();
+    let bytes = this.curValue.toBits();
 
-    for (let i = 0; i < 4; i++) {
-      result[i] = bitsToInt64(bits.slice(i * 64, (i + 1) * 64), maxValues[i]);
-    }
+    for (let i = 0; i < 4; i++)
+      result[i] = Int64.fromFields([
+        Field.fromBits(bytes.slice(i * 64 + 1, (i + 1) * 64)),
+      ]).mod(range[i]);
+
+    return result;
+  }
+
+  // Get 3 numbers
+  getNumbers(maxValue: number): [UInt32, UInt32, UInt32] {
+    this.source = Poseidon.hash([this.source]);
+    this.curValue = this.source;
+    const result: [UInt32, UInt32, UInt32] = [
+      UInt32.from(0),
+      UInt32.from(0),
+      UInt32.from(0),
+    ];
+
+    let bytes = this.curValue.toBits();
+
+    for (let i = 0; i < 3; i++)
+      result[i] = UInt32.fromFields([
+        Field.fromBits(bytes.slice(i * 32 + 1, (i + 1) * 32)),
+      ]).mod(maxValue);
 
     return result;
   }

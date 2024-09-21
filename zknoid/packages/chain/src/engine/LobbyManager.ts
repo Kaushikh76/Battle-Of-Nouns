@@ -19,7 +19,7 @@ import { Balances, UInt64 as ProtoUInt64 } from '@proto-kit/library';
 import { inject } from 'tsyringe';
 import { ZNAKE_TOKEN_ID } from '../constants';
 
-const PLAYER_AMOUNT = 2;
+const PLAYER_AMOUNT = 3;
 export const DEFAULT_PARTICIPATION_FEE = ProtoUInt64.from(10 ** 9);
 
 export class RoundIdxUser extends Struct({
@@ -278,7 +278,10 @@ export class LobbyManager extends RuntimeModule<LobbyManagerConfig> {
     );
 
     // Should be before initGame
-    await this.pendingBalances.set(sender, pendingBalance.add(amountToTransfer));
+    await this.pendingBalances.set(
+      sender,
+      pendingBalance.add(amountToTransfer),
+    );
 
     await this.balances.transfer(
       ZNAKE_TOKEN_ID,
@@ -314,7 +317,7 @@ export class LobbyManager extends RuntimeModule<LobbyManagerConfig> {
     await this.activeLobby.set(currentLobby, lobby);
 
     const lobbyReady = lobby.readyAmount.equals(UInt64.from(PLAYER_AMOUNT));
-
+    Provable.log(lobby, lobbyReady);
     await this.initGame(lobby, lobbyReady);
   }
 
@@ -386,32 +389,39 @@ export class LobbyManager extends RuntimeModule<LobbyManagerConfig> {
     gameId: UInt64,
     player1: PublicKey,
     player2: PublicKey,
+    player3: PublicKey,
     player1Share: ProtoUInt64,
     player2Share: ProtoUInt64,
+    player3Share: ProtoUInt64,
   ) {
     assert((await this.gameFinished.get(gameId)).value.not());
 
     await this.gameFinished.set(gameId, Bool(true));
 
+    const totalShares = player1Share.add(player2Share).add(player3Share);
+    const gameFund = ProtoUInt64.from((await this.gameFund.get(gameId)).value);
+
     await this.balances.mint(
       ZNAKE_TOKEN_ID,
       player1,
-      ProtoUInt64.from((await this.gameFund.get(gameId)).value)
-        .mul(player1Share)
-        .div(player1Share.add(player2Share)),
+      gameFund.mul(player1Share).div(totalShares),
     );
     await this.balances.mint(
       ZNAKE_TOKEN_ID,
       player2,
-      ProtoUInt64.from((await this.gameFund.get(gameId)).value)
-        .mul(player2Share)
-        .div(player1Share.add(player2Share)),
+      gameFund.mul(player2Share).div(totalShares),
+    );
+    await this.balances.mint(
+      ZNAKE_TOKEN_ID,
+      player3,
+      gameFund.mul(player3Share).div(totalShares),
     );
   }
 
   @runtimeMethod()
   public async collectPendingBalance(): Promise<void> {
-    const sender = (await this.sessions.get(this.transaction.sender.value)).value;
+    const sender = (await this.sessions.get(this.transaction.sender.value))
+      .value;
 
     const pendingBalance = ProtoUInt64.from(
       (await this.pendingBalances.get(sender)).value,

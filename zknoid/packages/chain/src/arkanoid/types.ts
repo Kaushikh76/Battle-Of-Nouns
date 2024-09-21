@@ -199,11 +199,11 @@ export class Ball extends Struct({
     const bottomBorder = brick.pos.y;
 
     /*
-            Collision
-                ball.pos.x \inc [leftBorder, rightBorder]
-                ball.pos.y \inc [bottomBorder, topBorder]
-
-            */
+              Collision
+                  ball.pos.x \inc [leftBorder, rightBorder]
+                  ball.pos.y \inc [bottomBorder, topBorder]
+  
+              */
 
     const hasRightPass = inRange(rightBorder, prevBallPos.x, this.position.x);
     const hasLeftPass = inRange(leftBorder, prevBallPos.x, this.position.x);
@@ -211,34 +211,34 @@ export class Ball extends Struct({
     const hasBottomPass = inRange(bottomBorder, prevBallPos.y, this.position.y);
 
     /*
-                Detect where collision ocured
-                /////////////// horizontal part of a brick //////////////////////////
-                y = d
-                ay = bx + c;
-                c = ay1 - bx1
-                    a - ball.speed.x
-                    b - ball.speed.y
-                bx = ay - c
-                bx = ad - c;
-
-                x \incl [ brick.pos.x, brick.pos.x + 2 * BRICK_HALF_WIDTH ]
-                bx \incl [b(brics.pos.x, b(brick.pos.x + 2 * BRICK_HALF_WIDTH))]
-                ad - c \incl [b(brics.pos.x), b(brick.pos.x + 2 * BRICK_HALF_WIDTH))]
-                
-
-
-                /////////////// vertical part of a brick ////////////////////////////
-                x = d
-                ay = bx + c
-                c = ay1 - bx1
-                    a - ball.speed.x
-                    b - ball.speed.y
-                ay = bd + c
-
-                y \incl [ brick.pos.y, brick.pos.y + 2 * BRICK_HALF_WIDTH]
-                ay \incl [ a(brick.pos.y), a(brick.pos.y + 2 * BRICK_HALF_WIDTH)]
-                bd + c \incl [ a(brick.pos.y), a(brick.pos.y + 2 * BRICK_HALF_WIDTH)]
-            */
+                  Detect where collision ocured
+                  /////////////// horizontal part of a brick //////////////////////////
+                  y = d
+                  ay = bx + c;
+                  c = ay1 - bx1
+                      a - ball.speed.x
+                      b - ball.speed.y
+                  bx = ay - c
+                  bx = ad - c;
+  
+                  x \incl [ brick.pos.x, brick.pos.x + 2 * BRICK_HALF_WIDTH ]
+                  bx \incl [b(brics.pos.x, b(brick.pos.x + 2 * BRICK_HALF_WIDTH))]
+                  ad - c \incl [b(brics.pos.x), b(brick.pos.x + 2 * BRICK_HALF_WIDTH))]
+                  
+  
+  
+                  /////////////// vertical part of a brick ////////////////////////////
+                  x = d
+                  ay = bx + c
+                  c = ay1 - bx1
+                      a - ball.speed.x
+                      b - ball.speed.y
+                  ay = bd + c
+  
+                  y \incl [ brick.pos.y, brick.pos.y + 2 * BRICK_HALF_WIDTH]
+                  ay \incl [ a(brick.pos.y), a(brick.pos.y + 2 * BRICK_HALF_WIDTH)]
+                  bd + c \incl [ a(brick.pos.y), a(brick.pos.y + 2 * BRICK_HALF_WIDTH)]
+              */
 
     const moveRight = this.speed.x.isPositive();
     const moveTop = this.speed.y.isPositive();

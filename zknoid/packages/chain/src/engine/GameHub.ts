@@ -14,7 +14,7 @@ import {
   GameRecordKey,
   LeaderboardIndex,
   LeaderboardScore,
-} from '../games/arkanoid/types';
+} from '../arkanoid/types';
 import { ZNAKE_TOKEN_ID } from '../constants';
 
 export interface IScoreable {
