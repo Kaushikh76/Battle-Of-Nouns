@@ -216,7 +216,9 @@ export class LobbyManager extends RuntimeModule<LobbyManagerConfig> {
 
   @state() public gameFinished = StateMap.from<UInt64, Bool>(UInt64, Bool);
 
-  public constructor(@inject('Balances') private balances: Balances) {
+  // public constructor(@inject('Balances') private balances: Balances) {
+  // TODO: I changed
+  public constructor(private balances: Balances) {
     super();
   }
 

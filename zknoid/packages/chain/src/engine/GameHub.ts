@@ -65,7 +65,9 @@ export class Gamehub<
 
   public leaderboardSize = 10;
 
-  public constructor(@inject('Balances') private balances: Balances) {
+  // public constructor(@inject('Balances') private balances: Balances) {
+  // TODO: I changed
+  public constructor(private balances: Balances) {
     super();
   }
 
