@@ -1,0 +1,24 @@
+.isometric-grid {
+  position: relative;
+  width: calc(10 * 70px); /* Adjust according to tile size */
+  height: calc(10 * 35px); /* Adjust according to tile size */
+  transform: rotateX(60deg) rotateZ(45deg);
+  transform-style: preserve-3d;
+}
+
+.tile {
+  position: absolute;
+  width: 70px; /* Tile width */
+  height: 70px; /* Tile height */
+  transform: scale(1) skewY(-30deg) rotate(45deg);
+}
+
+.tile:nth-child(n) {
+  top: calc(var(--row) * 35px); /* Adjust according to row */
+  left: calc(var(--col) * 70px); /* Adjust according to column */
+}
+
+.tile-image {
+  width: 100%;
+  height: 100%;
+}

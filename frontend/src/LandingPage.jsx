@@ -2,23 +2,23 @@ import React, { useState } from 'react';
 import IsometricGrid from './IsometricGrid';
 
 const tribes = ['Marines', 'Ninjas', 'Rangers'];
-const characters = ['Defender', 'Warrior', 'Sponge'];
+const characters = ['Defender', 'bomber', 'Warrier'];
 
 const characterImages = {
   Marines: [
     'src/assets/marines-defender.png',
-    'src/assets/marines-warrior.png',
-    'src/assets/marines-sponge.png',
+    'src/assets/marines-bomber.png',
+    'src/assets/marines-warrier.png',
   ],
   Ninjas: [
     'src/assets/ninjas-defender.png',
-    'src/assets/ninjas-warrior.png',
-    'src/assets/ninjas-sponge.png',
+    'src/assets/ninjas-bomber.png',
+    'src/assets/ninjas-warrier.png',
   ],
   Rangers: [
     'src/assets/rangers-defender.png',
-    'src/assets/rangers-warrior.png',
-    'src/assets/rangers-sponge.png',
+    'src/assets/rangers-bomber.png',
+    'src/assets/rangers-warrier.png',
   ],
 };
 
@@ -61,7 +61,52 @@ export default function LandingPage() {
     setError('');
   };
 
-  
+  const renderTribePicker = () => (
+    <div className="space-y-3 flex flex-col items-center">
+      <h2 className="text-4xl text-green-900 mb-4">Choose Your Tribe</h2>
+      <div className="flex justify-between mb-4 w-full max-w-2xl">
+        {characters.map((character, index) => (
+          <div 
+            key={index} 
+            className="w-1/4 flex flex-col items-center"
+          >
+            <div className="w-full aspect-square flex items-center justify-center">
+              <img 
+                src={characterImages[tribes[selectedTribe]][index]} 
+                alt={`${tribes[selectedTribe]} ${character}`}
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+            <p className="text-center mt-2">{character}</p>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-center space-x-8">
+        <button
+          className="bg-transparent border-none focus:outline-none"
+          onClick={() => setSelectedTribe((prev) => (prev - 1 + tribes.length) % tribes.length)}
+        >
+          <img src="src/assets/prev.png" alt="Previous Tribe" className="w-12 h-12" />
+        </button>
+        <p className="text-2xl text-green-900">
+          Tribe: {tribes[selectedTribe]}
+        </p>
+        <button
+          className="bg-transparent border-none focus:outline-none"
+          onClick={() => setSelectedTribe((prev) => (prev + 1) % tribes.length)}
+        >
+          <img src="src/assets/next.png" alt="Next Tribe" className="w-12 h-12" />
+        </button>
+      </div>
+      <button
+        className="w-[270px] h-[40px] bg-button-bg  text-white text-xl"
+        onClick={handleConfirmSelection}
+      >
+        Confirm Selection
+      </button>
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-custom-bg flex items-center justify-center p-4">
